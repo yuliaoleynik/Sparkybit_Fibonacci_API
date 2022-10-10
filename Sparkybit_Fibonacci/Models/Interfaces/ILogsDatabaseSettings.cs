@@ -1,6 +1,6 @@
 ﻿namespace Sparkybit_Fibonacci.Models.Interfaces
 {
-    public class ILogsDatabaseSettings
+    public interface ILogsDatabaseSettings
     {
         string LogsColectionName { get; set; }
         string ConnectionString { get; set; }
