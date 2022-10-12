@@ -1,48 +1,48 @@
 ﻿using MongoDB.Driver;
-using Sparkybit_Fibonacci.Models;
 using Sparkybit_Fibonacci.Services.Interfaces;
 
 namespace Sparkybit_Fibonacci.Services.Implementations
 {
     public class FibonacciService : IFibonacciService
     {
-        private readonly IMongoCollection<Log> _mongoCollection;
-        public FibonacciService(IMongoClient client, LogsDatabaseSettings settings)
-        {
-            var database = client.GetDatabase(settings.DatabaseName);
-            _mongoCollection = database.GetCollection<Log>(settings.LogsColectionName);
-        }
+        public FibonacciService() { }
 
-        public void FibonacciReverse(List<List<int>> data)
+        public string FibonacciReverse(string data)
         {
-            _mongoCollection.InsertOne(new Log { Date = DateTime.Now, Title = "FibonacciReverse", Description = $"Start to revers fibonacci rows." });
+            List<string> result = new();
+            List<string> lines = data.Split("\r\n").ToList();
 
-            foreach(List<int> row in data)
+            foreach (string line in lines)
             {
-                if (IsFibonacci(row))
+                var array = line.Split(' ').Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => Convert.ToInt32(n.Trim())).ToArray();
+
+                if (IsFibonacci(array))
                 {
-                    Reverse(row);
+                    Reverse(array);
                 }
+
+                result.Add(string.Join(' ', array));
             }
+            return string.Join("\r\n", result);
         }
 
-        public bool IsFibonacci(List<int> list)
+        public bool IsFibonacci(int[] line)
         {
-            for (int i = 2; i < list.Count; i++)
+            for (int i = 2; i < line.Length; i++)
             {
-                if ((list[i - 1] + list[i - 2]) != list[i])
+                if ((line[i - 1] + line[i - 2]) != line[i])
                     return false;
             }
             return true;
         }
 
-        public void Reverse(List<int> list)
+        public void Reverse(int[] line)
         {
-            for (int i = 0; i < list.Count - i; i++)
+            for (int i = 0; i < line.Length - i; i++)
             {
-                var value = list[list.Count - i - 1];
-                list[list.Count - i - 1] = list[i];
-                list[i] = value;
+                var value = line[line.Length - i - 1];
+                line[line.Length - i - 1] = line[i];
+                line[i] = value;
             }
         }
     }

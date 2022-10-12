@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Sparkybit_Fibonacci.Services.Implementations;
+﻿using Microsoft.AspNetCore.Mvc;
 using Sparkybit_Fibonacci.Services.Interfaces;
 using Sparkybit_Fibonacci.Models;
 using MongoDB.Driver;
 using Sparkybit_Fibonacci.Models.Interfaces;
+using System.Text;
 
 namespace Sparkybit_Fibonacci.Controllers
 {
@@ -13,12 +12,13 @@ namespace Sparkybit_Fibonacci.Controllers
     public class FibonacciController : ControllerBase
     {
         private readonly IFibonacciService _fibonacciService;
-        private readonly IMongoCollection<Log> _mongoCollection;
+        private readonly IMongoCollection<Log> _mongoCollection; 
+
         public FibonacciController(IFibonacciService fibonacciService, ILogsDatabaseSettings settings, IMongoClient client)
         {
             _fibonacciService = fibonacciService;
             var database = client.GetDatabase(settings.DatabaseName);
-            _mongoCollection = database.GetCollection<Log>(settings.LogsColectionName);
+            _mongoCollection = database.GetCollection<Log>(settings.LogsCollectionName);
         }
 
         [HttpPost("process")]
@@ -26,32 +26,30 @@ namespace Sparkybit_Fibonacci.Controllers
         {
             _mongoCollection.InsertOne(new Log { Date = DateTime.Now, Title = "HttpPost UploadFile", Description = $"Start to process the file." });
 
-            var data = new List<List<int>>();
+            var data = new StringBuilder();
             try
             {
                 using (var reader = new StreamReader(file.OpenReadStream()))
                 {
-                    string fileContent = reader.ReadToEnd();
-                    string[] lines = fileContent.Split("\r\n");
-
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        data.Add(new List<int>());
-                        string[] splittedLines = lines[i].Split(' ');
-                        for (int j = 0; j < splittedLines.Length; j++)
-                        {
-                            data[i].Add(Convert.ToInt32(splittedLines[j]));
-                        }
-                    }
+                    while (reader.Peek() >= 0)
+                        data.AppendLine(reader.ReadLine());
                 }
-                _fibonacciService.FibonacciReverse(data);
+
+                var result = _fibonacciService.FibonacciReverse(data.ToString());
+
                 _mongoCollection.InsertOne(new Log { Date = DateTime.Now, Title = "HttpPost UploadFile", Description = $"Successfuly processed the file." });
-                return File();
+                return File(ListToStream(result), "application/txt", file.FileName);
             }
             catch
             {
                 _mongoCollection.InsertOne(new Log { Date = DateTime.Now, Title = "HttpPost UploadFile", Description = $"File read error." });
+                return BadRequest(new { massage = "The file is empty or incorrectly filled out." });
             }
+        }
+
+        private MemoryStream ListToStream(string? list)
+        {
+            return new MemoryStream(Encoding.UTF8.GetBytes(list ?? ""));
         }
     }
 }

@@ -2,9 +2,9 @@
 {
     public interface IFibonacciService
     {
-        public void FibonacciReverse(List<List<int>> data);
-        public bool IsFibonacci(List<int> list);
-        public void Reverse(List<int> list);
+        public string FibonacciReverse(string data);
+        public bool IsFibonacci(int[] line);
+        public void Reverse(int[] line);
 
     }
 }
